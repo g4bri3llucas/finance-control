@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import TransactionForm from "./TransactionForm";
 import TransactionList from "./TransactionList";
 import SummaryCards from "./SummaryCards";
+import MonthlyChart from "./MonthlyChart";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -76,12 +77,22 @@ export default function App() {
           </select>
         </div>
 
-        {/* CARDS — aparecem em todas as abas */}
+        {/* CARDS */}
         <SummaryCards transactions={filtered} />
 
-        {activeTab === "dashboard" && <p>Gráfico vai aparecer aqui...</p>}
-        {activeTab === "add"       && <TransactionForm onAdd={handleAdd} />}
-        {activeTab === "list"      && (
+        {/* DASHBOARD COM GRÁFICO */}
+        {activeTab === "dashboard" && (
+          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "14px", padding: "24px" }}>
+            <h2 style={{ margin: "0 0 20px", fontSize: "1rem", fontWeight: 700 }}>
+              📊 Gráfico Mensal
+            </h2>
+            <MonthlyChart transactions={transactions} />
+          </div>
+        )}
+
+        {activeTab === "add" && <TransactionForm onAdd={handleAdd} />}
+
+        {activeTab === "list" && (
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "14px", overflow: "hidden" }}>
             <div style={{ padding: "20px 24px", borderBottom: "1px solid #f3f4f6" }}>
               <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>
