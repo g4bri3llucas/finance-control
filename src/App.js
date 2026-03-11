@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import TransactionForm from "./TransactionForm";
 import TransactionList from "./TransactionList";
+import SummaryCards from "./SummaryCards";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -10,19 +11,16 @@ export default function App() {
   const handleAdd = (tx) => setTransactions([tx, ...transactions]);
   const handleDelete = (id) => setTransactions(transactions.filter((t) => t.id !== id));
 
-  // PIPE: lista de meses disponíveis nas transações
   const months = useMemo(() =>
     [...new Set(transactions.map((t) => t.date.slice(0, 7)))].sort()
   , [transactions]);
 
-  // PIPE: formata "2025-03" → "Mar/2025"
   const formatMonth = (monthStr) => {
     const [year, month] = monthStr.split("-");
     const names = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
     return `${names[parseInt(month) - 1]}/${year}`;
   };
 
-  // PIPE: filtra transações pelo mês selecionado
   const filtered = useMemo(() =>
     selectedMonth
       ? transactions.filter((t) => t.date.startsWith(selectedMonth))
@@ -77,6 +75,9 @@ export default function App() {
             ))}
           </select>
         </div>
+
+        {/* CARDS — aparecem em todas as abas */}
+        <SummaryCards transactions={filtered} />
 
         {activeTab === "dashboard" && <p>Gráfico vai aparecer aqui...</p>}
         {activeTab === "add"       && <TransactionForm onAdd={handleAdd} />}
