@@ -4,6 +4,21 @@ import TransactionList from "./TransactionList";
 import SummaryCards from "./SummaryCards";
 import MonthlyChart from "./MonthlyChart";
 
+// ── PIPES personalizados centralizados ────────────────────────────
+export const pipes = {
+  currency: (value) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value),
+
+  date: (dateStr) =>
+    new Date(dateStr + "T00:00:00").toLocaleDateString("pt-BR"),
+
+  monthLabel: (monthStr) => {
+    const [year, month] = monthStr.split("-");
+    const names = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+    return `${names[parseInt(month) - 1]}/${year}`;
+  },
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [transactions, setTransactions] = useState([]);
@@ -16,17 +31,29 @@ export default function App() {
     [...new Set(transactions.map((t) => t.date.slice(0, 7)))].sort()
   , [transactions]);
 
-  const formatMonth = (monthStr) => {
-    const [year, month] = monthStr.split("-");
-    const names = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-    return `${names[parseInt(month) - 1]}/${year}`;
-  };
-
   const filtered = useMemo(() =>
     selectedMonth
       ? transactions.filter((t) => t.date.startsWith(selectedMonth))
       : transactions
   , [transactions, selectedMonth]);
+
+  // ── PIPE: gera e baixa o arquivo CSV ─────────────────────────────
+  const exportCSV = () => {
+    const header = "Data,Descrição,Tipo,Categoria,Valor\n";
+    const rows = filtered.map((t) =>
+      `${pipes.date(t.date)},"${t.description}",${t.type},${t.category || ""},${t.amount}`
+    ).join("\n");
+
+    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = selectedMonth
+      ? `financas-${pipes.monthLabel(selectedMonth)}.csv`
+      : "financas-completo.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const tabStyle = (tab) => ({
     padding: "8px 20px",
@@ -62,7 +89,7 @@ export default function App() {
           ))}
         </div>
 
-        {/* FILTRO POR MÊS */}
+        {/* FILTRO + EXPORTAR */}
         <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "20px", flexWrap: "wrap" }}>
           <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#374151" }}>📅 Filtrar por mês:</label>
           <select
@@ -72,20 +99,35 @@ export default function App() {
           >
             <option value="">Todos os meses</option>
             {months.map((m) => (
-              <option key={m} value={m}>{formatMonth(m)}</option>
+              <option key={m} value={m}>{pipes.monthLabel(m)}</option>
             ))}
           </select>
+
+          {/* BOTÃO EXPORTAR CSV */}
+          <button
+            onClick={exportCSV}
+            disabled={filtered.length === 0}
+            style={{
+              padding: "8px 16px",
+              background: filtered.length === 0 ? "#f3f4f6" : "#fff",
+              border: "1px solid #d1d5db",
+              borderRadius: "8px",
+              fontSize: "0.85rem",
+              fontWeight: 600,
+              cursor: filtered.length === 0 ? "not-allowed" : "pointer",
+              color: filtered.length === 0 ? "#9ca3af" : "#374151",
+            }}
+          >
+            ⬇️ Exportar CSV
+          </button>
         </div>
 
         {/* CARDS */}
         <SummaryCards transactions={filtered} />
 
-        {/* DASHBOARD COM GRÁFICO */}
         {activeTab === "dashboard" && (
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "14px", padding: "24px" }}>
-            <h2 style={{ margin: "0 0 20px", fontSize: "1rem", fontWeight: 700 }}>
-              📊 Gráfico Mensal
-            </h2>
+            <h2 style={{ margin: "0 0 20px", fontSize: "1rem", fontWeight: 700 }}>📊 Gráfico Mensal</h2>
             <MonthlyChart transactions={transactions} />
           </div>
         )}
